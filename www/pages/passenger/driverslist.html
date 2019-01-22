@@ -1,0 +1,29 @@
+<template>
+<div class="page">
+  <div class="navbar">
+    <div class="navbar-inner sliding">
+      <div class="title">Near drivers</div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="list no-hairlines-md">
+      <ul id="drivers-list">
+        {{#each drivers}}
+          <div class="block block-strong">
+                <p><b>Status:</b> {{RequestStatus}}</p>
+                  <p><b>Driver name:</b> {{FullName}}</p>
+                  <p><b>Driver username:</b> {{Email}}</p>
+                  <p><b>Location:</b> {{Latitude}}, {{Longitude}}</p>
+                  {{#if RequestStatus}}
+                    <p class="row"><a href="#" onclick="userController.SendRequest('{{Id}}')" class="col button">Send request</a></p>
+                  {{/if}}
+              </div>
+        {{/each}}
+      </ul>
+    </div>
+  </div>
+</div>
+</template>
+<script>
+  return {}
+</script>
