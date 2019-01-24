@@ -13,6 +13,7 @@ class UserController
 		  	$$("#user-info .name").html(this.user.FullName);
 		  	$$("#user-info .username").html(this.user.Email);
 		  	$$("#user-info .usertype").html(this.user.UserType);
+		  	$$("#user-info .rating").html(this.user.Rating);
 		  	//console.log("1232131")
 		//});
 	}
@@ -109,6 +110,42 @@ class UserController
 		      }
 			homeView.router.navigate(`/driverslist/${startLocation[0]}/${startLocation[1]}/${finishLocation[0]}/${finishLocation[1]}/`);
 		});
+
+		this.startRideRequestChecking();
+	}
+
+	async startRideRequestChecking(){
+		setInterval(async ()=> {
+			let acceptedRide = await httpRequest(requestType.get, "api/Ride/CheckIfRideIsAccepted", null);
+			//if(acceptedRide != null)
+			//{
+				//this.app.dialog.alert(`Congratulations! Driver:${acceptedRide.DriverName} accepted your ride request!`, "Request accepted!");
+				this.showCurrentRide(acceptedRide, "passenger");
+			//}
+		}, 1000);
+	}
+
+	async showCurrentRide(currentRide, usertype) {
+		//let currentRide = await httpRequest(requestType.get, "api/Ride/CheckIfRideIsAccepted", null);
+		let htmlString = "";
+		if(currentRide != null)
+		{
+			htmlString = `
+			<div class="block block-strong">
+				<p>Current ride!</p>
+				<p><b>Driver: </b>${currentRide.DriverName}</p>
+				<p><b>Passenger: </b>${currentRide.PassengerName}</p>
+				<p><b>Start location: </b>${currentRide.StartLatitude}, ${currentRide.StartLongitude}</p>
+				<p><b>Finish location: </b>${currentRide.FinishLatitude}, ${currentRide.FinishLongitude}</p>
+			</div>
+			<div class="block block-strong">
+				<p class="row">
+				  <a href="#" onclick="userController.finishRide(${currentRide.Id}, '${usertype}')" class="col button">Finish ride</a>
+				</p>
+			</div>`
+		}
+
+		$$("#current-ride").html(htmlString);
 	}
 
 	loadDriverPage() {
@@ -120,7 +157,7 @@ class UserController
 		console.log("startLocationTracking")
 		 if (navigator.geolocation) {
 		 	console.log("navigator.geolocation")
-			//setInterval(()=> {
+			setInterval(()=> {
 				console.log("setInterval")
 				navigator.geolocation.getCurrentPosition(async position=>{
 					let pos = {
@@ -128,12 +165,45 @@ class UserController
 						latitude: position.coords.latitude
 					};
 
-					let status = await httpRequest(requestType.get, "api/Ride/UpdatePosition", pos, false);
-					console.log(status);
+					await httpRequest(requestType.get, "api/Ride/UpdatePosition", pos, false);
+					this.showAllRequests();
+					let currentRide = await httpRequest(requestType.get, "api/Ride/CurrentRide", null);
+					//if(currentRide != null)
+					//{	
+						this.showCurrentRide(currentRide, "driver");
+					//}
 				});
 				
-			//}, 60000);
+			}, 1000);
 		}
+	}
+
+	async showAllRequests() {
+		let rideRequests = await httpRequest(requestType.get, "api/Ride/GetRideRequests", null);
+		let htmlString = "";
+		//console.log(rideRequests);
+		for (var i = 0; i < rideRequests.length; i++) {
+			htmlString += `
+			<div class="block block-strong">
+				<p>You have new Ride request!</p>
+				<p><b>User: </b>${rideRequests[i].PassengerName}</p>
+				<p><b>Start location: </b>${rideRequests[i].StartLatitude}, ${rideRequests[i].StartLongitude}</p>
+				<p><b>Finish location: </b>${rideRequests[i].FinishLatitude}, ${rideRequests[i].FinishLongitude}</p>
+			</div>
+			<div class="block block-strong">
+				<p class="row">
+				  <a href="#" onclick="userController.acceptRide(${rideRequests[i].Id})" class="col button">Accept</a>
+				</p>
+			</div>`;
+		}
+
+		$$("#driver-page").html(htmlString);
+	}
+
+	async acceptRide(rideId) {
+		let status = await httpRequest(requestType.get, "api/Ride/AcceptRide", {rideId: rideId}, false);
+		console.log(status);
+		this.showAllRequests();
 	}
 
 	async SendRequest(driverId){
@@ -145,5 +215,22 @@ class UserController
 		homeView.router.navigate(`/driverslist/${this.rideRequest.startLatitude}/${this.rideRequest.startLongitude}/${this.rideRequest.finishLatitude}/${this.rideRequest.finishLongitude}/`);
 	}
 
+	finishRide(rideId, usertype){
+		this.app.dialog.prompt("Rate this ride from 1 to 5 stars", "Rating", 
+		async (value) => {
+			let finishData = {
+				rideId: rideId,
+				rating: value,
+				usertype: usertype
+			}
+			let status = await httpRequest(requestType.get, "api/Ride/FinishRide", finishData, false);
+			console.log(status);
+		}, 
+		() => {
+			console.log("canceled");
+		}, 
+		5);
 
+		
+	}
 }

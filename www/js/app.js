@@ -48,9 +48,7 @@ var app  = new Framework7({
 var homeView = app.views.create('#view-home', {
   url: '/'
 });
-var catalogView = app.views.create('#view-catalog', {
-  url: '/catalog/'
-});
+
 var settingsView = app.views.create('#view-settings', {
   url: '/settings/'
 });
@@ -78,6 +76,11 @@ const apiUrl = "http://localhost:63019/";
 const tokenKey = 'accessToken';
 const tokenKeyExpirationDate = "tokenKeyExpirationDate";
 const requestType = {post: "POST", get: "GET"};
+
+
+var catalogView = app.views.create('#view-catalog', {
+  url: '/catalog/'
+});
 
 function httpRequest(method, path, data, stringify = true)
 {
