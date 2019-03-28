@@ -13,6 +13,19 @@ class UserController
 		  	$$("#user-info .name").html(this.user.FullName);
 		  	$$("#user-info .username").html(this.user.Email);
 		  	$$("#user-info .usertype").html(this.user.UserType);
+		  	let rideDiscountNumberElem = $$("#user-info .ride-discount-number-input");
+		  	if(this.user.UserType == "driver")
+		  	{
+		  		rideDiscountNumberElem.val(this.user.RideDiscountNumber);
+		  		$$("#user-info .ride-discount-number-save").on("click", async () => {
+		  			console.log("rideDiscountNumberElem")
+		  			let rideDiscountNumber =  rideDiscountNumberElem.val();
+		  			let rideDUData = await httpRequest(requestType.get, "api/Account/UpdateRideDiscountNumber", { rideDiscountNumber: rideDiscountNumber }, false);
+					console.log(rideDUData);
+		  		});
+		  	}
+		  	else
+		  		$$("#user-info .ride-discount-number").hide();
 		  	$$("#user-info .rating").html(this.user.Rating);
 		  	//console.log("1232131")
 		//});
@@ -116,7 +129,7 @@ class UserController
 
 	async startRideRequestChecking(){
 		setInterval(async ()=> {
-			let acceptedRide = await httpRequest(requestType.get, "api/Ride/CheckIfRideIsAccepted", null);
+			let acceptedRide = await httpRequest(requestType.get, "api/Ride/CurrentRide", null);
 			//if(acceptedRide != null)
 			//{
 				//this.app.dialog.alert(`Congratulations! Driver:${acceptedRide.DriverName} accepted your ride request!`, "Request accepted!");
@@ -140,7 +153,7 @@ class UserController
 			</div>
 			<div class="block block-strong">
 				<p class="row">
-				  <a href="#" onclick="userController.finishRide(${currentRide.Id}, '${usertype}')" class="col button">Finish ride</a>
+				  <a href="#" onclick="userController.finishRide(${currentRide.Id}, '${usertype}', '${currentRide.ExtraMessage}')" class="col button">Finish ride</a>
 				</p>
 			</div>`
 		}
@@ -215,8 +228,9 @@ class UserController
 		homeView.router.navigate(`/driverslist/${this.rideRequest.startLatitude}/${this.rideRequest.startLongitude}/${this.rideRequest.finishLatitude}/${this.rideRequest.finishLongitude}/`);
 	}
 
-	finishRide(rideId, usertype){
-		this.app.dialog.prompt("Rate this ride from 1 to 5 stars", "Rating", 
+	finishRide(rideId, usertype, extraMessage){
+		extraMessage += extraMessage != "" ? "<br>" : "";
+		this.app.dialog.prompt(extraMessage + "Rate this ride from 1 to 5 stars", "Rating", 
 		async (value) => {
 			let finishData = {
 				rideId: rideId,
