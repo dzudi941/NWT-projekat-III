@@ -15,13 +15,26 @@ routes = [
       let rideRequest = {
         startLatitude: routeTo.params.startLatitude,
         startLongitude: routeTo.params.startLongitude,
-        radius: routeTo.params.radius/*,
         finishLatitude: routeTo.params.finishLatitude,
-        finishLongitude: routeTo.params.finishLongitude*/
+        finishLongitude: routeTo.params.finishLongitude,
+        radius: routeTo.params.radius
       }
       //console.log(findInfo)
       let drivers = await httpRequest(requestType.get, "api/Ride/FindDrivers", rideRequest, false);
-
+      console.log(drivers)
+      for (var i = 0; i < drivers.length; i++) {
+        if(drivers[i].PriceForRoute < 0 || drivers[i].PriceForRoute == null)
+        {
+          drivers[i].PriceForRoute = "Deal";
+          drivers[i]["EstimatedPrice"] = -1;
+        }
+        else
+        {
+          let price = Math.round(drivers[i].PriceForRoute);
+          drivers[i].PriceForRoute = "€ " + price;
+          drivers[i]["EstimatedPrice"] = price;
+        }
+      }
         resolve(
           {
             componentUrl: './pages/passenger/driverslist.html',

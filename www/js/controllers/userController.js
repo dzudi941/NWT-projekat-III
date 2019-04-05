@@ -13,14 +13,22 @@ class UserController
 		  	$$("#user-info .name").html(this.user.FullName);
 		  	$$("#user-info .username").html(this.user.Email);
 		  	$$("#user-info .usertype").html(this.user.UserType == 0 ? "Driver" : "Passenger");
-		  	let rideDiscountNumberElem = $$("#user-info .ride-discount-number-input");
+		  	
 		  	if(this.user.UserType == 0)
 		  	{
+		  		let rideDiscountNumberElem = $$("#user-info .ride-discount-number-input");
+
 		  		rideDiscountNumberElem.val(this.user.RideDiscountNumber);
+		  		console.log("this.user.DiscountInPercentage" + this.user.DiscountInPercentage)
+		  		$$("#user-info .ride-discount-percentage").val(this.user.DiscountInPercentage);
+		  		$$("#user-info .ride-price-per-km").val(this.user.PriceForRoute == -1 ? "" : this.user.PriceForRoute);
 		  		$$("#user-info .ride-discount-number-save").on("click", async () => {
-		  			console.log("rideDiscountNumberElem")
+		  			//console.log("rideDiscountNumberElem")
 		  			let rideDiscountNumber =  rideDiscountNumberElem.val();
-		  			let rideDUData = await httpRequest(requestType.get, "api/Account/UpdateRideDiscountNumber", { rideDiscountNumber: rideDiscountNumber }, false);
+		  			let pricePerKm = $$("#user-info .ride-price-per-km").val();
+		  			pricePerKm = pricePerKm == "" ? -1 : pricePerKm;
+		  			let discountInPercentage = $$("#user-info .ride-discount-percentage").val();
+		  			let rideDUData = await httpRequest(requestType.get, "api/Account/UpdateDriverSettings", { rideDiscountNumber: rideDiscountNumber, pricePerKm: pricePerKm, discountInPercentage: discountInPercentage }, false);
 					console.log(rideDUData);
 		  		});
 		  	}
@@ -178,6 +186,7 @@ class UserController
 				<p><b>Passenger: </b>${currentRide.PassengerName}</p>
 				<p><b>Start location: </b>${currentRide.StartLatitude}, ${currentRide.StartLongitude}</p>
 				<p><b>Finish location: </b>${currentRide.FinishLatitude}, ${currentRide.FinishLongitude}</p>
+				<p><b>Estimated price: </b>€ ${currentRide.EstimatedPrice}</p>
 			</div>
 			<div class="block block-strong">
 				<p class="row">
@@ -231,6 +240,7 @@ class UserController
 				<p><b>User: </b>${rideRequests[i].PassengerName}</p>
 				<p><b>Start location: </b>${rideRequests[i].StartLatitude}, ${rideRequests[i].StartLongitude}</p>
 				<p><b>Finish location: </b>${rideRequests[i].FinishLatitude}, ${rideRequests[i].FinishLongitude}</p>
+				<p><b>Estimated price: </b>€ ${rideRequests[i].EstimatedPrice}</p>
 			</div>
 			<div class="block block-strong">
 				<p class="row">
@@ -255,9 +265,10 @@ class UserController
 		this.showAllRequests();
 	}
 
-	async SendRequest(driverId){
+	async SendRequest(driverId, estimatedPrice){
 		//this.innerText("Request sent!");
 		this.rideRequest["driverId"] = driverId;
+		this.rideRequest["estimatedPrice"] = estimatedPrice;
 		console.log(this.rideRequest)
 		let status = await httpRequest(requestType.post, "api/Ride/SendRequest", this.rideRequest);
 	

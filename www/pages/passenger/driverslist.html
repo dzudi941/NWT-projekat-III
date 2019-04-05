@@ -20,8 +20,9 @@
                   <p><b>Driver name:</b> {{FullName}}</p>
                   <p><b>Driver username:</b> {{Email}}</p>
                   <p><b>Location:</b> {{Latitude}}, {{Longitude}} (total distance {{TotalDistance}}km)</p>
+                  <p><b>Estiamted price:</b> {{PriceForRoute}}</p>
                   {{#if DriverStatus}}
-                    <p class="row"><a href="#" onclick="userController.SendRequest('{{Id}}')" class="col button">Send request</a></p>
+                    <p class="row"><a href="#" onclick="userController.SendRequest('{{Id}}', {{EstimatedPrice}})" class="col button">Send request</a></p>
                   {{/if}}
               </div>
         {{/each}}
