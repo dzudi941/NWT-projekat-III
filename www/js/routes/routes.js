@@ -5,7 +5,7 @@ routes = [
   },
   {
     name: 'driverslist',
-    path: '/driverslist/:startLatitude/:startLongitude/:finishLatitude/:finishLongitude',
+    path: '/driverslist/:startLatitude/:startLongitude/:finishLatitude/:finishLongitude/:radius',
     async: async function (routeTo, routeFrom, resolve, reject) {
       var router = this;
 
@@ -15,8 +15,9 @@ routes = [
       let rideRequest = {
         startLatitude: routeTo.params.startLatitude,
         startLongitude: routeTo.params.startLongitude,
+        radius: routeTo.params.radius/*,
         finishLatitude: routeTo.params.finishLatitude,
-        finishLongitude: routeTo.params.finishLongitude
+        finishLongitude: routeTo.params.finishLongitude*/
       }
       //console.log(findInfo)
       let drivers = await httpRequest(requestType.get, "api/Ride/FindDrivers", rideRequest, false);

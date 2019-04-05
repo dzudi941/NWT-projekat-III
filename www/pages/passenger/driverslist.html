@@ -19,7 +19,7 @@
                 <p><b>Status:</b> {{#if DriverStatus}} Available{{else}}Not Available{{/if}}</p>
                   <p><b>Driver name:</b> {{FullName}}</p>
                   <p><b>Driver username:</b> {{Email}}</p>
-                  <p><b>Location:</b> {{Latitude}}, {{Longitude}}</p>
+                  <p><b>Location:</b> {{Latitude}}, {{Longitude}} (total distance {{TotalDistance}}km)</p>
                   {{#if DriverStatus}}
                     <p class="row"><a href="#" onclick="userController.SendRequest('{{Id}}')" class="col button">Send request</a></p>
                   {{/if}}

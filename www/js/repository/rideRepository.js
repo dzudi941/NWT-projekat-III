@@ -5,6 +5,4 @@ class RideRepository
 		this.database = database;
 		this.auth = auth;
 	}
-
-	
 }

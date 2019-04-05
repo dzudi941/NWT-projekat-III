@@ -12,9 +12,9 @@ class UserController
 		//$$(document).on('page:init', '.page[data-name="profile"]', function (e) {
 		  	$$("#user-info .name").html(this.user.FullName);
 		  	$$("#user-info .username").html(this.user.Email);
-		  	$$("#user-info .usertype").html(this.user.UserType);
+		  	$$("#user-info .usertype").html(this.user.UserType == 0 ? "Driver" : "Passenger");
 		  	let rideDiscountNumberElem = $$("#user-info .ride-discount-number-input");
-		  	if(this.user.UserType == "driver")
+		  	if(this.user.UserType == 0)
 		  	{
 		  		rideDiscountNumberElem.val(this.user.RideDiscountNumber);
 		  		$$("#user-info .ride-discount-number-save").on("click", async () => {
@@ -47,12 +47,14 @@ class UserController
 		this.app.popup.open(registerScreen, false);
 		let registerScreenRegisterButton = $$("#register-screen .register-button");
 		registerScreenRegisterButton.on("click", async () => {
+			let usertype = $$('#register-screen [name="usertype"]:checked').val();
+			let usrT = usertype == "driver" ? 0 : 1;
 			let user = new User(
 					$$('#register-screen [name="fullname"]').val(),
 					$$('#register-screen [name="email"]').val(),
 					$$('#register-screen [name="password"]').val(),
 					$$('#register-screen [name="passwordConfirm"]').val(),
-					$$('#register-screen [name="usertype"]:checked').val()
+					usrT
 				);
 			console.log(user)
 			await this.userRepository.register(user);
@@ -90,7 +92,7 @@ class UserController
 			//Object.assign(this.user, data);
 			//console.log(this.user.email)
 			this.handleSettingsPage();
-			if(data.UserType == "passenger") {
+			if(data.UserType == 1) {
 				this.loadPassengerPage();
 			} else {
 				this.loadDriverPage();
@@ -115,13 +117,14 @@ class UserController
 		$$("#passenger-page .find").on("click", async ()=>{
 			let startLocation = $$("#passenger-page .start").val().split(',');
 			let finishLocation = $$("#passenger-page .finish").val().split(',');
+			let radius = $$("#passenger-page .radius").val();
 			this.rideRequest = {
 		        startLatitude: startLocation[0],
 		        startLongitude: startLocation[1],
 		        finishLatitude: finishLocation[0],
 		        finishLongitude: finishLocation[1]
 		      }
-			homeView.router.navigate(`/driverslist/${startLocation[0]}/${startLocation[1]}/${finishLocation[0]}/${finishLocation[1]}/`);
+			homeView.router.navigate(`/driverslist/${startLocation[0]}/${startLocation[1]}/${finishLocation[0]}/${finishLocation[1]}/${radius}`);
 		});
 
 		this.startRideRequestChecking();
@@ -135,6 +138,9 @@ class UserController
 				//this.app.dialog.alert(`Congratulations! Driver:${acceptedRide.DriverName} accepted your ride request!`, "Request accepted!");
 				this.showCurrentRide(acceptedRide, "passenger");
 			//}
+
+			let pendingRideRequest = await httpRequest(requestType.get, "api/Ride/PendingRideRequest", null);
+			if(pendingRideRequest != null) this.showPendingRideRequest(pendingRideRequest);
 		}, 1000);
 	}
 
@@ -161,6 +167,28 @@ class UserController
 		$$("#current-ride").html(htmlString);
 	}
 
+	async showPendingRideRequest(currentRide) {
+		let htmlString = "";
+		if(currentRide != null)
+		{
+			htmlString = `
+			<div class="block block-strong">
+				<p>Pending ride request!</p>
+				<p><b>Driver: </b>${currentRide.DriverName}</p>
+				<p><b>Passenger: </b>${currentRide.PassengerName}</p>
+				<p><b>Start location: </b>${currentRide.StartLatitude}, ${currentRide.StartLongitude}</p>
+				<p><b>Finish location: </b>${currentRide.FinishLatitude}, ${currentRide.FinishLongitude}</p>
+			</div>
+			<div class="block block-strong">
+				<p class="row">
+				  <a href="#" onclick="userController.declineRide(${currentRide.Id})" class="col button">Cancel request</a>
+				</p>
+			</div>`
+		}
+
+		$$("#current-ride").html(htmlString);
+	}
+
 	loadDriverPage() {
 		$$("#driver-page").show();
 		this.startLocationTracking();
@@ -174,9 +202,10 @@ class UserController
 				console.log("setInterval")
 				navigator.geolocation.getCurrentPosition(async position=>{
 					let pos = {
-						longitude: position.coords.longitude,
-						latitude: position.coords.latitude
+						longitude: /*21.8880453*/position.coords.longitude,
+						latitude:  /*43.316019*/position.coords.latitude
 					};
+					//console.log(pos)
 
 					await httpRequest(requestType.get, "api/Ride/UpdatePosition", pos, false);
 					this.showAllRequests();
@@ -206,6 +235,7 @@ class UserController
 			<div class="block block-strong">
 				<p class="row">
 				  <a href="#" onclick="userController.acceptRide(${rideRequests[i].Id})" class="col button">Accept</a>
+				  <a href="#" onclick="userController.declineRide(${rideRequests[i].Id})" class="col button color-red">Decline</a>
 				</p>
 			</div>`;
 		}
@@ -215,6 +245,12 @@ class UserController
 
 	async acceptRide(rideId) {
 		let status = await httpRequest(requestType.get, "api/Ride/AcceptRide", {rideId: rideId}, false);
+		console.log(status);
+		this.showAllRequests();
+	}
+
+	async declineRide(rideId) {
+		let status = await httpRequest(requestType.get, "api/Ride/DeclineRide", {rideId: rideId}, false);
 		console.log(status);
 		this.showAllRequests();
 	}
@@ -232,10 +268,11 @@ class UserController
 		extraMessage += extraMessage != "" ? "<br>" : "";
 		this.app.dialog.prompt(extraMessage + "Rate this ride from 1 to 5 stars", "Rating", 
 		async (value) => {
+			let usrT = usertype == "driver" ? 0 : 1;
 			let finishData = {
 				rideId: rideId,
 				rating: value,
-				usertype: usertype
+				usertype: usrT
 			}
 			let status = await httpRequest(requestType.get, "api/Ride/FinishRide", finishData, false);
 			console.log(status);
