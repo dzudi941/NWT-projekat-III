@@ -167,7 +167,7 @@ class UserController
 			</div>
 			<div class="block block-strong">
 				<p class="row">
-				  <a href="#" onclick="userController.finishRide(${currentRide.Id}, '${usertype}', '${currentRide.ExtraMessage}')" class="col button">Finish ride</a>
+				  <a href="#" onclick="userController.finishRide(${currentRide.Id}, '${usertype}', ${currentRide.TotalDiscount}, ${currentRide.RideNumber})" class="col button">Finish ride</a>
 				</p>
 			</div>`
 		}
@@ -275,8 +275,8 @@ class UserController
 		homeView.router.navigate(`/driverslist/${this.rideRequest.startLatitude}/${this.rideRequest.startLongitude}/${this.rideRequest.finishLatitude}/${this.rideRequest.finishLongitude}/`);
 	}
 
-	finishRide(rideId, usertype, extraMessage){
-		extraMessage += extraMessage != "" ? "<br>" : "";
+	finishRide(rideId, usertype, totalDiscount, rideNumber){
+		extraMessage += totalDiscount > 0 && rideNumber > 0 ? `This ride is ${rideNumber + 1}th and it will have a discount = ${totalDiscount}!!!<br>` : "";
 		this.app.dialog.prompt(extraMessage + "Rate this ride from 1 to 5 stars", "Rating", 
 		async (value) => {
 			let usrT = usertype == "driver" ? 0 : 1;
